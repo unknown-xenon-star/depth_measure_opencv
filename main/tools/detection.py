@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def crop_cord(x,y,w,h):
+def crop_cord(x,y,w,h, depth_map):
     cx = x + w//4
     cy = y + h//4
 

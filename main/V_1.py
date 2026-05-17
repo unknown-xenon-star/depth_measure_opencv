@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import imutils
 import math
+#177
+
 
 def resize(img, x):
     return cv2.resize(img, (0,0), fx=x,fy=x)

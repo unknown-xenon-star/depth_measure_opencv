@@ -13,8 +13,11 @@ from config import (
 )
 
 
-def disparity_n_depth_map(left, right, colored=False):
-
+def disparity_n_depth_map(left, right, Colored=False):
+    
+    # =========================
+    # SGBM CONFIG
+    # =========================
     stereo = cv2.StereoSGBM_create(
         minDisparity=0,
         numDisparities=16 * 12,   # must be divisible by 16
@@ -26,7 +29,7 @@ def disparity_n_depth_map(left, right, colored=False):
         speckleWindowSize=100,
         speckleRange=32
     )
-
+    
     disparity = stereo.compute(left, right).astype(np.float32)
     
     # OpenCV scales disparity by 16
@@ -56,7 +59,7 @@ def disparity_n_depth_map(left, right, colored=False):
     
     disparity_display = np.uint8(disparity_display)
 
-    if colored:
+    if Colored:
         # Apply color map
         disparity_colormap = cv2.applyColorMap(
             disparity_display,
