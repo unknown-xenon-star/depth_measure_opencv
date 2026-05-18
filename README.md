@@ -33,3 +33,33 @@ Method used:
 - calculate the disparity map
 - calculate the depth
 
+### Architechture
+
+```mermaid
+flowchart TD
+
+    k1[Left Camera Feed]
+    k2[Right Camera Feed]
+
+    k1 --> A
+    k2 --> A
+
+    A[(Stereo Visual Input)] -->|"Stereo Frames"| K3(["Sync
+    Camera Calibration
+    Image Rectification"])
+
+    K3 --> P[Preprocessing]
+
+    P --> M[Stereo Matching]
+
+    M --> DMap[Disparity Map]
+
+    DMap --> Depth[Depth Estimation]
+
+    Depth --> O[Object Detection]
+
+    O --> Distance[Distance Measurement]
+
+    Distance --> Output[Visualization / HUD]
+```
+

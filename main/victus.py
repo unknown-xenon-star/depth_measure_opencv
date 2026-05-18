@@ -1,6 +1,8 @@
 import cv2
 LEFT_CAMERA_INDEX = 0
 
+from tools.disparity_map import disparity_n_depth_map as compute_depth
+
 def run_live():
 
     cap_left = cv2.VideoCapture(LEFT_CAMERA_INDEX)
