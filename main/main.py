@@ -24,7 +24,7 @@ def main() -> None:
     if left is None or right is None:
         raise FileNotFoundError("Could not load images.")
     
-    disparity_map, depth_map = disparity_n_depth_map(left, right, colored=True)
+    disparity_map, depth_map = disparity_n_depth_map(left, right, Colored=True)
     # save_images([disparity_map, depth_map], prefix="initial")
     # while True:
     #     # cv2.imshow("disparity_map", cv2.resize(disparity_map, (0, 0), fx=0.35, fy=0.35))

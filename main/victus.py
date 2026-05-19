@@ -1,5 +1,8 @@
 import cv2
-LEFT_CAMERA_INDEX = 0
+from config import (
+    LEFT_CAMERA_INDEX,
+    RIGHT_CAMERA_INDEX
+)
 
 from tools.disparity_map import disparity_n_depth_map as compute_depth
 

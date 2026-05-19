@@ -59,15 +59,12 @@ def save_images(imgs, output_dir="down", prefix="img"):
 
             else:
                 save_img = np.zeros_like(img, dtype=np.uint8)
-
         cv2.imwrite(path, save_img)
-
         print(
             f"[SAVED] {path} | "
             f"dtype={img.dtype} | "
             f"shape={img.shape}"
         )
-
 
 def save_new(img):
     h, w = img.shape[:2]
@@ -163,7 +160,6 @@ def plot_rgb_planes(images, spacing=10):
 
     print("RUN")
     plt.show()
-
 
 def save_sepreated_layers(img, layered=True, cmap='viridis', n_layers=5):
 

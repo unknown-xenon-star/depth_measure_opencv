@@ -11,10 +11,8 @@ OUT_DIR = "crops"
 def load_model(path=MODEL):
     return YOLO(path)
 
-
 def detect(model, image_path, conf=CONF):
     return model(image_path, conf=conf)[0]
-
 
 def crop(image_path, boxes, model_names, padding=PADDING, out_dir=OUT_DIR):
     img = cv2.imread(image_path)
@@ -55,6 +53,14 @@ def run(image_path=IMAGE, conf=CONF):
     model   = load_model()
     results = detect(model, image_path, conf=conf)
     crop(image_path, results.boxes, model.names)
+
+def get_roi(frame, model):
+    """Return cropped ROI using YOLO, or full frame if no detection."""
+    boxes = cropped(frame, model=model)
+    if not boxes:
+        return frame, None
+    x1, y1, x2, y2 = boxes[0]   # first match
+    return frame[y1:y2, x1:x2], (x1, y1)
 
 if __name__ == "__main__":
     run()

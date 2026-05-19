@@ -1,0 +1,57 @@
+### System Architecture: Stereo Vision Pipeline
+
+```mermaid
+flowchart TB
+    %% Styling for GitHub Light/Dark Compatibility
+    classDef input fill:#2b303b,stroke:#4f5b66,stroke-width:2px,color:#fff;
+    classDef process fill:#4f5b66,stroke:#65737e,stroke-width:2px,color:#fff;
+    classDef intermediate fill:#a7adba,stroke:#c0c5ce,stroke-width:2px,color:#000;
+    classDef analytics fill:#343d46,stroke:#4f5b66,stroke-width:2px,color:#fff;
+    classDef output fill:#bf616a,stroke:#d08770,stroke-width:2px,color:#fff;
+
+    subgraph Ingestion["1. Sensor Ingestion & Alignment"]
+        k1[Left Camera Feed]:::input
+        k2[Right Camera Feed]:::input
+        Sync{"Frame Synchronization & Timestamping"}:::process
+        Calib[("Calibration Matrices (Intrinsics/Extrinsics)")]:::input
+        Rect["Image Rectification (Epipolar Alignment)"]:::process
+        
+        k1 & k2 --> Sync
+        Sync --> Rect
+        Calib -.-> Rect
+    end
+
+    subgraph StereoProc["2. Stereo Correspondence & Depth"]
+        PreProc["Image Preprocessing (Denoising / Contrast)"]:::process
+        Matching["Stereo Matching (SGM / Deep Learning)"]:::process
+        RawDisp["Raw Disparity Map"]:::intermediate
+        Filter["Disparity Post-Filtering (WLS / Hole Filling)"]:::process
+        DepthCalc["Depth Map & 3D Point Cloud Generation"]:::intermediate
+        
+        Rect --> PreProc
+        PreProc --> Matching
+        Matching --> RawDisp
+        RawDisp --> Filter
+        Filter --> DepthCalc
+    end
+
+    subgraph Perception["3. Spatial Perception & Analytics"]
+        ObjDet["Object Detection (YOLO / 2D-3D CNN)"]:::process
+        Fusion["Spatial Data Fusion (Bounding Box + Depth)"]:::process
+        Tracking["Temporal Tracking (Kalman Filter / SORT)"]:::process
+        Hazards["Distance & Hazard Assessment (TTC Calculation)"]:::analytics
+        
+        Rect --> ObjDet
+        ObjDet --> Fusion
+        DepthCalc --> Fusion
+        Fusion --> Tracking
+        Tracking --> Hazards
+    end
+
+    subgraph OutLayer["4. Output Layer"]
+        HUD["Visualization Engine / HUD"]:::output
+        Control["Control / Actuation Signals (Optional)"]:::output
+        
+        Hazards --> HUD
+        Hazards --> Control
+    end

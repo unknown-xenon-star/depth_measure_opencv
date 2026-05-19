@@ -3,31 +3,28 @@ import cv2
 import numpy as np
 # import imutils
 # import math
+# from tools.object import cropped
 from tools.disparity_map import disparity_n_depth_map
+from tools.detection import find_depth, find_object
 from tools.hsv import add_HSV_filter
-from tools.detection import find_object, find_depth
-
-from tools.config import (
-    MODE,
-
-    FOCAL_LENGTH, 
-    BASELINE,
-    DISPARITY_OFFSET,
-    ALPHA,
+from tools.extras import masked_percentile_depth
+from tools.object import get_roi
+from config import (
     MASK_HSV,
-    
-    LEFT_IMAGE,
-    RIGHT_IMAGE 
+    BASELINE,
+    ALPHA
 )
+#177
+
+kernel = np.ones((5,5), np.uint8)
+
+
 
 
 
 # =========================================================
 # MAIN PROGRAM
 # =========================================================
-
-# Stereo camera BASELINE distance [cm]
-# B = 10
 
 # Open left and right cameras
 cap = cv2.VideoCapture("assest/video.mp4")
@@ -56,7 +53,7 @@ while True:
     # =====================================================
 
     mask_right = add_HSV_filter(frame_right, 5, MASK_HSV)
-    mask_left = add_HSV_filter(frame_left,5 ,MASK_HSV)
+    mask_left = add_HSV_filter(frame_left, 5, MASK_HSV)
 
     # Apply masks
     res_right = cv2.bitwise_and( frame_right, frame_right, mask=mask_right )
@@ -87,25 +84,9 @@ while True:
     else:
 
         # Compute depth
-        depth = find_depth( circles_right, circles_left, frame_right, frame_left, BASELINE, ALPHA)
+        # depth = find_depth( circles_right, circles_left, frame_right, frame_left, BASELINE, ALPHA)
         # depth_ = depth_map 
-        roi = depth_map[
-            corr_r[0][1]:corr_r[1][1],
-            corr_r[0][0]:corr_r[1][0]
-        ]
-
-        roi_mask = mask_right[
-            corr_r[0][1]:corr_r[1][1],
-            corr_r[0][0]:corr_r[1][0]
-        ]
-
-        values = roi[roi_mask > 0]
-        values = values[np.isfinite(values)]
-        values = values[values > 0]
-        if values.size > 0:
-            depth = np.percentile(values, 50)
-        else:
-            depth = None
+        depth = masked_percentile_depth(depth_map, mask_right, corr_r)
         # Show tracking
         cv2.putText( frame_right, "TRACKING", (75,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (124,252,0), 2)
         cv2.putText( frame_left, "TRACKING", (75,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (124,252,0), 2 )
@@ -120,7 +101,7 @@ while True:
     # SHOW WINDOWS
     # =====================================================
 
-    cv2.imshow("RIGHT CAMERA", frame_right)
+    cv2.imshow("RIGHT CAMERA", res_right)
     # cv2.imshow("LEFT CAMERA", frame_left)
 
     # cv2.imshow("MASK RIGHT", mask_right)
