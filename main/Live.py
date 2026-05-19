@@ -26,9 +26,6 @@ from tools.config import (
 # MAIN PROGRAM
 # =========================================================
 
-# Stereo camera BASELINE distance [cm]
-# B = 10
-
 # Open left and right cameras
 cap = cv2.VideoCapture("assest/video.mp4")
 frame_count=0
@@ -55,13 +52,12 @@ while True:
     # HSV FILTERING
     # =====================================================
 
-    mask_right = add_HSV_filter(frame_right, 5, MASK_HSV)
-    mask_left = add_HSV_filter(frame_left,5 ,MASK_HSV)
+    mask_right = add_HSV_filter(frame_right, 7, MASK_HSV)
+    mask_left = add_HSV_filter(frame_left, 7,MASK_HSV)
 
     # Apply masks
-    res_right = cv2.bitwise_and( frame_right, frame_right, mask=mask_right )
-
-    res_left = cv2.bitwise_and( frame_left, frame_left, mask=mask_left )
+    # res_right = cv2.bitwise_and( frame_right, frame_right, mask=mask_right )
+    # res_left = cv2.bitwise_and( frame_left, frame_left, mask=mask_left )
 
     # =====================================================
     # OBJECT DETECTION

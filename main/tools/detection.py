@@ -84,7 +84,15 @@ def find_circles(frame, mask):
 
     return center, radius
 
-def find_object(frame, mask):
+def find_object(frame: np.ndarray, mask: np.ndarray):
+    """
+    Locate the largest masked contour and draw it on *frame*.
+
+    Returns
+    -------
+    center : (cx, cy) or None
+    bbox   : [[x1, y1], [x2, y2]] or None
+    """
 
     contours, _ = cv2.findContours( mask.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE )
     # contours = imutils.grab_contours(contours)
@@ -97,12 +105,12 @@ def find_object(frame, mask):
     # if len(contours) > 0:
 
     # Largest contour
-    c = max(contours, key=cv2.contourArea)
+    largest_contour = max(contours, key=cv2.contourArea)
 
-    if cv2.contourArea(c) < MIN_AREA:
+    if cv2.contourArea(largest_contour) < MIN_AREA:
         return None, None
 
-    x, y, w, h = cv2.boundingRect(c)
+    x, y, w, h = cv2.boundingRect(largest_contour)
 
     center = (x + w // 2, y + h // 2)
 

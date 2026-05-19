@@ -1,15 +1,16 @@
+from time import time
 import cv2
 import numpy as np
 
 # ── Stereo / depth constants ───────────────────────────────────────────────────
-BASELINE         = 10      # camera baseline [cm]
-FOV_DEG          = 68      # horizontal FOV [degrees]
-FOCAL_LENGTH     = 600.0   # pixels — tune to your camera
-DISPARITY_OFFSET = 1.0     # avoids divide-by-zero at zero disparity
-DISP_SCALE       = 0.5     # resize factor fed into SGBM (0.5 = quarter pixels)
+BASELINE         = 17.7     # camera baseline [cm]
+FOV_DEG          = 70       # horizontal FOV [degrees]
+FOCAL_LENGTH     = 180.0    # pixels — tune to your camera
+DISPARITY_OFFSET = 1.0      # avoids divide-by-zero at zero disparity
+DISP_SCALE       = 0.8      # resize factor fed into SGBM (0.5 = quarter pixels)
 
 # ── Detection constants ────────────────────────────────────────────────────────
-MIN_AREA = 300
+MIN_AREA = 50
 MORPH_K  = np.ones((5, 5), np.uint8)
 
 # ── SGBM — created once, reused every frame ────────────────────────────────────
@@ -30,6 +31,109 @@ _sgbm = cv2.StereoSGBM_create(
 
 # ── Core functions ─────────────────────────────────────────────────────────────
 
+
+class KalmanDepthFilter:
+    def __init__(self):
+
+        # State vector:
+        # [depth, velocity]
+        self.x = np.array([
+            [0.0],
+            [0.0]
+        ])
+
+        # Covariance matrix
+        self.P = np.eye(2) * 1000
+
+        # State transition
+        dt = 1.0
+
+        self.F = np.array([
+            [1, dt],
+            [0, 1]
+        ])
+
+        # Measurement model
+        self.H = np.array([
+            [1, 0]
+        ])
+
+        # Measurement noise
+        self.R = np.array([
+            [10]
+        ])
+
+        # Process noise
+        self.Q = np.array([
+            [0.01, 0],
+            [0, 0.01]
+        ])
+
+        self.initialized = False
+
+    def update(self, measurement):
+
+        # -----------------------------
+        # Prediction step
+        # -----------------------------
+        self.x = self.F @ self.x
+
+        self.P = (
+            self.F @ self.P @ self.F.T
+            + self.Q
+        )
+
+        # -----------------------------
+        # Handle missing measurement
+        # -----------------------------
+        if measurement is None:
+
+            # Return predicted value only
+            return float(self.x[0, 0])
+
+        # -----------------------------
+        # First valid measurement
+        # -----------------------------
+        if not self.initialized:
+
+            self.x[0, 0] = measurement
+            self.x[1, 0] = 0
+
+            self.initialized = True
+
+            return measurement
+
+        # -----------------------------
+        # Measurement update
+        # -----------------------------
+        z = np.array([
+            [measurement]
+        ])
+
+        y = z - self.H @ self.x
+
+        S = (
+            self.H @ self.P @ self.H.T
+            + self.R
+        )
+
+        K = (
+            self.P @ self.H.T
+            @ np.linalg.inv(S)
+        )
+
+        self.x = self.x + K @ y
+
+        I = np.eye(2)
+
+        self.P = (
+            I - K @ self.H
+        ) @ self.P
+
+        return float(self.x[0, 0])
+
+kf = KalmanDepthFilter()
+
 def disparity_n_depth_map(
     left:    np.ndarray,
     right:   np.ndarray,
@@ -47,9 +151,10 @@ def disparity_n_depth_map(
     h, w = left.shape[:2]
 
     # Convert to gray once — SGBM needs single-channel
-    gray_l = cv2.cvtColor(left,  cv2.COLOR_BGR2GRAY)
-    gray_r = cv2.cvtColor(right, cv2.COLOR_BGR2GRAY)
-
+    # gray_l = cv2.cvtColor(left,  cv2.COLOR_BGR2GRAY)
+    # gray_r = cv2.cvtColor(right, cv2.COLOR_BGR2GRAY)
+    gray_l = left
+    gray_r = right
     if scale != 1.0:
         dsize  = (int(w * scale), int(h * scale))
         gray_l = cv2.resize(gray_l, dsize, interpolation=cv2.INTER_LINEAR)
@@ -74,16 +179,14 @@ def disparity_n_depth_map(
 
     return disp_vis, depth
 
-
 def hsv_mask(frame: np.ndarray) -> np.ndarray:
     """Binary mask isolating the target object via HSV thresholding."""
     blur = cv2.GaussianBlur(frame, (7, 7), 0)
     hsv  = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, (0, 80, 50), (179, 255, 255))
+    mask = cv2.inRange(hsv, (51,88,71), (180,199,255))
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN,  MORPH_K, iterations=1)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, MORPH_K, iterations=2)
     return mask
-
 
 def find_object(frame: np.ndarray, mask: np.ndarray):
     """
@@ -110,7 +213,6 @@ def find_object(frame: np.ndarray, mask: np.ndarray):
 
     return center, [[x, y], [x + w, y + h]]
 
-
 def masked_percentile_depth(
     depth_map:  np.ndarray,
     mask:       np.ndarray,
@@ -126,7 +228,6 @@ def masked_percentile_depth(
     values = values[np.isfinite(values) & (values > 0)]
     return float(np.percentile(values, percentile)) if values.size > 0 else None
 
-
 def annotate(frame: np.ndarray, tracking: bool, depth) -> None:
     """Draw tracking status and depth label onto *frame* in-place."""
     if tracking:
@@ -136,12 +237,13 @@ def annotate(frame: np.ndarray, tracking: bool, depth) -> None:
     else:
         cv2.putText(frame, "TRACKING LOST", (75, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
-
 # ── Main loop ──────────────────────────────────────────────────────────────────
 
-cap = cv2.VideoCapture(r"assest\car002.m2ts")
-
+cap = cv2.VideoCapture("assest/video.mp4")
+frame_count=0
+time_start=time()
 while True:
+    frame_count+=1
     ret, frame = cap.read()
     if not ret:
         break
@@ -164,8 +266,9 @@ while True:
     # ── Depth map + estimation (only when tracking) ────────────────────────────
     depth = None
     if tracking:
-        _, depth_map = disparity_n_depth_map(frame_left, frame_right, colored=False)
+        _, depth_map = disparity_n_depth_map(mask_left, mask_right, colored=True)
         depth = masked_percentile_depth(depth_map, mask_right, bbox_right)
+        depth = kf.update(depth)
         print(f"Depth: {depth:.2f} cm" if depth else "Depth: NaN")
 
     # ── Annotate + display ─────────────────────────────────────────────────────
@@ -176,6 +279,8 @@ while True:
     cv2.imshow("LEFT CAMERA",  frame_left)
 
     if cv2.pollKey() & 0xFF == ord('q'):   # non-blocking — saves ~1 ms/frame
+        time_diff = time()-time_start
+        print(f"\n#| ====================\n#| FRAME DATA\n#|\n#| TOTAL FRAMES: {frame_count}\n#| TOTAL TIME: {time_diff}\n#| FPS: {frame_count/time_diff:.2f}\n#| ====================")
         break
 
 cap.release()

@@ -35,6 +35,14 @@ def disparity_n_depth_map(
     scale:   float = 0.8,
 
 ):
+    """
+    Compute disparity and metric depth map.
+
+    Speed knobs
+    -----------
+    scale : resize both frames before SGBM, then upscale result back.
+            0.5 => ~4x fewer pixels -> big FPS boost with small quality loss.
+    """
     h, w = left.shape[:2]
 
     if scale != 1.0:

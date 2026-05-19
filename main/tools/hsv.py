@@ -4,14 +4,15 @@ import imutils
 import math
 from config import BASELINE, ALPHA, MASK_HSV
 
-kernel = np.ones((5,5), np.uint8)
+MORPH_K = np.ones((5,5), np.uint8)
 import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from tools.detection import find_circles, find_depth, find_object
 
-def add_HSV_filter(frame, blur_factor, mask):
+def add_HSV_filter(frame: np.ndarray, blur_factor, mask) -> np.ndarray:
+    """Binary mask isolating the target object via HSV thresholding."""
 
     # Blur image to reduce noise
     blur = cv2.GaussianBlur(frame, (blur_factor, blur_factor), 0)
@@ -27,8 +28,8 @@ def add_HSV_filter(frame, blur_factor, mask):
         mask[1]
     )
 
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel, iterations=1)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel, iterations=2)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, MORPH_K, iterations=1)
+    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, MORPH_K, iterations=2)
 
     return mask
 
