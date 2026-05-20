@@ -6,8 +6,8 @@ MODE = "static"
 
 # Camera field of view [degrees]
 ALPHA               = 70        # horizontal FOV [degrees]
-FOCAL_LENGTH        = 180.0     # pixels — tune to your camera
-BASELINE            = 17.7      # camera baseline [cm]
+FOCAL_LENGTH        = 600.0     # pixels — tune to your camera
+BASELINE            = 10      # camera baseline [cm]
 DISPARITY_OFFSET    = 1.0       # avoids divide-by-zero at zero disparity
 DISP_SCALE          = 0.5       # resize factor fed into SGBM (0.5 = quarter pixels)
 MIN_AREA            = 50

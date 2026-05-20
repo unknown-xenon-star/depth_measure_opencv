@@ -32,107 +32,107 @@ _sgbm = cv2.StereoSGBM_create(
 # ── Core functions ─────────────────────────────────────────────────────────────
 
 
-class KalmanDepthFilter:
-    def __init__(self):
+# class KalmanDepthFilter:
+#     def __init__(self):
 
-        # State vector:
-        # [depth, velocity]
-        self.x = np.array([
-            [0.0],
-            [0.0]
-        ])
+#         # State vector:
+#         # [depth, velocity]
+#         self.x = np.array([
+#             [0.0],
+#             [0.0]
+#         ])
 
-        # Covariance matrix
-        self.P = np.eye(2) * 1000
+#         # Covariance matrix
+#         self.P = np.eye(2) * 1000
 
-        # State transition
-        dt = 1.0
+#         # State transition
+#         dt = 1.0
 
-        self.F = np.array([
-            [1, dt],
-            [0, 1]
-        ])
+#         self.F = np.array([
+#             [1, dt],
+#             [0, 1]
+#         ])
 
-        # Measurement model
-        self.H = np.array([
-            [1, 0]
-        ])
+#         # Measurement model
+#         self.H = np.array([
+#             [1, 0]
+#         ])
 
-        # Measurement noise
-        self.R = np.array([
-            [10]
-        ])
+#         # Measurement noise
+#         self.R = np.array([
+#             [10]
+#         ])
 
-        # Process noise
-        self.Q = np.array([
-            [0.01, 0],
-            [0, 0.01]
-        ])
+#         # Process noise
+#         self.Q = np.array([
+#             [0.01, 0],
+#             [0, 0.01]
+#         ])
 
-        self.initialized = False
+#         self.initialized = False
 
-    def update(self, measurement):
+#     def update(self, measurement):
 
-        # -----------------------------
-        # Prediction step
-        # -----------------------------
-        self.x = self.F @ self.x
+#         # -----------------------------
+#         # Prediction step
+#         # -----------------------------
+#         self.x = self.F @ self.x
 
-        self.P = (
-            self.F @ self.P @ self.F.T
-            + self.Q
-        )
+#         self.P = (
+#             self.F @ self.P @ self.F.T
+#             + self.Q
+#         )
 
-        # -----------------------------
-        # Handle missing measurement
-        # -----------------------------
-        if measurement is None:
+#         # -----------------------------
+#         # Handle missing measurement
+#         # -----------------------------
+#         if measurement is None:
 
-            # Return predicted value only
-            return float(self.x[0, 0])
+#             # Return predicted value only
+#             return float(self.x[0, 0])
 
-        # -----------------------------
-        # First valid measurement
-        # -----------------------------
-        if not self.initialized:
+#         # -----------------------------
+#         # First valid measurement
+#         # -----------------------------
+#         if not self.initialized:
 
-            self.x[0, 0] = measurement
-            self.x[1, 0] = 0
+#             self.x[0, 0] = measurement
+#             self.x[1, 0] = 0
 
-            self.initialized = True
+#             self.initialized = True
 
-            return measurement
+#             return measurement
 
-        # -----------------------------
-        # Measurement update
-        # -----------------------------
-        z = np.array([
-            [measurement]
-        ])
+#         # -----------------------------
+#         # Measurement update
+#         # -----------------------------
+#         z = np.array([
+#             [measurement]
+#         ])
 
-        y = z - self.H @ self.x
+#         y = z - self.H @ self.x
 
-        S = (
-            self.H @ self.P @ self.H.T
-            + self.R
-        )
+#         S = (
+#             self.H @ self.P @ self.H.T
+#             + self.R
+#         )
 
-        K = (
-            self.P @ self.H.T
-            @ np.linalg.inv(S)
-        )
+#         K = (
+#             self.P @ self.H.T
+#             @ np.linalg.inv(S)
+#         )
 
-        self.x = self.x + K @ y
+#         self.x = self.x + K @ y
 
-        I = np.eye(2)
+#         I = np.eye(2)
 
-        self.P = (
-            I - K @ self.H
-        ) @ self.P
+#         self.P = (
+#             I - K @ self.H
+#         ) @ self.P
 
-        return float(self.x[0, 0])
+#         return float(self.x[0, 0])
 
-kf = KalmanDepthFilter()
+# kf = KalmanDepthFilter()
 
 def disparity_n_depth_map(
     left:    np.ndarray,
@@ -217,7 +217,7 @@ def masked_percentile_depth(
     depth_map:  np.ndarray,
     mask:       np.ndarray,
     bbox,
-    percentile: float = 50,
+    percentile: float = 10,
 ) -> float | None:
     """
     Median (or any percentile) depth inside the object bbox,
@@ -232,33 +232,36 @@ def annotate(frame: np.ndarray, tracking: bool, depth) -> None:
     """Draw tracking status and depth label onto *frame* in-place."""
     if tracking:
         label = f"Distance: {round(depth, 2) if depth is not None else 'NaN'} cm"
-        cv2.putText(frame, "TRACKING", (75,  50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (124, 252, 0), 2)
-        cv2.putText(frame, label,       (200, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (124, 252, 0), 2)
+        # cv2.putText(frame, "TRACKING", (75,  50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (124, 252, 0), 2)
+        # cv2.putText(frame, label,       (200, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (124, 252, 0), 2)
+        cv2.putText(frame, "RIGHT IMAGE", (75, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
     else:
-        cv2.putText(frame, "TRACKING LOST", (75, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        
+        cv2.putText(frame, "LEFT IMAGE", (75, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
 
 # ── Main loop ──────────────────────────────────────────────────────────────────
 
-# cap = cv2.VideoCapture("assest/video.mp4")
-cap_left = cv2.VideoCapture(0)
-cap_right = cv2.VideoCapture(1)
+cap = cv2.VideoCapture("assest/video.mp4")
 frame_count=0
 time_start=time()
 while True:
     frame_count+=1
-    ret1, frame_left = cap_left.read()
-    ret2, frame_right = cap_right.read()
-    if not ret1:
+    ret, frame = cap.read()
+    if not ret:
         break
 
-    h, w        = frame_left.shape[:2]
+    h, w        = frame.shape[:2]
     half        = w // 2
-    # frame_left  = frame[:, :half]
-    # frame_right = frame[:, half:]
+    frame_left  = frame[:, :half]
+    frame_right = frame[:, half:]
 
     # ── HSV masks ──────────────────────────────────────────────────────────────
     mask_left  = hsv_mask(frame_left)
     mask_right = hsv_mask(frame_right)
+
+    # ── INSECTING IMAGE ───────────────────────────────────────────────────────
+    res_left = cv2.bitwise_and(frame_left, frame_left, mask=mask_left)
+    res_right = cv2.bitwise_and(frame_right, frame_right, mask=mask_right)
 
     # ── Object detection ───────────────────────────────────────────────────────
     center_right, bbox_right = find_object(frame_right, mask_right)
@@ -269,17 +272,18 @@ while True:
     # ── Depth map + estimation (only when tracking) ────────────────────────────
     depth = None
     if tracking:
-        _, depth_map = disparity_n_depth_map(mask_left, mask_right, colored=True)
+        disparity_map, depth_map = disparity_n_depth_map(res_left, res_right, colored=True)
         depth = masked_percentile_depth(depth_map, mask_right, bbox_right)
-        depth = kf.update(depth)
+        # depth = kf.update(depth)
         print(f"Depth: {depth:.2f} cm" if depth else "Depth: NaN")
 
     # ── Annotate + display ─────────────────────────────────────────────────────
-    annotate(frame_right, tracking, depth)
+    annotate(frame_right, False, depth)
     annotate(frame_left,  tracking, depth)
 
-    cv2.imshow("RIGHT CAMERA", frame_right)
-    cv2.imshow("LEFT CAMERA",  frame_left)
+    cv2.imshow("RIGHT CAMERA", res_right)
+    cv2.imshow("LEFT CAMERA",  res_left)
+    cv2.imshow("Depth map", depth_map )
 
     if cv2.pollKey() & 0xFF == ord('q'):   # non-blocking — saves ~1 ms/frame
         time_diff = time()-time_start
