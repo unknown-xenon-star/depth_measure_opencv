@@ -9,6 +9,7 @@ FOV_DEG          = 70       # horizontal FOV [degrees]
 FOCAL_LENGTH     = 180.0    # pixels — tune to your camera
 DISPARITY_OFFSET = 1.0      # avoids divide-by-zero at zero disparity
 DISP_SCALE       = 0.8      # resize factor fed into SGBM (0.5 = quarter pixels)
+HSV_MASK = [(104,41,109), (180,205,255)]
 
 # ── Detection constants ────────────────────────────────────────────────────────
 MIN_AREA = 50
@@ -184,7 +185,7 @@ def hsv_mask(frame: np.ndarray) -> np.ndarray:
     """Binary mask isolating the target object via HSV thresholding."""
     blur = cv2.GaussianBlur(frame, (7, 7), 0)
     hsv  = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, (51,88,71), (180,199,255))
+    mask = cv2.inRange(hsv, HSV_MASK[0], HSV_MASK[1])
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN,  MORPH_K, iterations=1)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, MORPH_K, iterations=2)
     return mask
