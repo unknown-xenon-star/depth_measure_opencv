@@ -2,6 +2,8 @@ from time import time, sleep
 import cv2
 import numpy as np
 from picamera2 import Picamera2 
+import matplotlib.pyplot as plt
+from collections import deque
 
 # ── Stereo / depth constants ───────────────────────────────────────────────────
 BASELINE         = 6.5    # camera baseline [cm]
@@ -9,7 +11,7 @@ FOV_DEG          = 82       # horizontal FOV [degrees]
 FOCAL_LENGTH     = 220.0    # pixels — tune to your camera
 DISPARITY_OFFSET = 1.0      # avoids divide-by-zero at zero disparity
 DISP_SCALE       = 0.75      # resize factor fed into SGBM (0.5 = quarter pixels)
-HSV_MASK = [(40,49,2), (112,255,219)]
+HSV_MASK = [(0, 96, 78), (80, 255, 220)]
 
 # ── Detection constants ────────────────────────────────────────────────────────
 MIN_AREA = 50
@@ -135,6 +137,24 @@ class KalmanDepthFilter:
         return float(self.x[0, 0])
 
 kf = KalmanDepthFilter()
+# ── Live matplotlib plot ────────────────────────────────────────────────────
+plt.ion()
+
+fig, ax = plt.subplots(figsize=(8, 4))
+
+depth_history = deque(maxlen=100)
+
+line, = ax.plot([], [])
+
+ax.set_title("Live Depth Plot")
+ax.set_xlabel("Frame")
+ax.set_ylabel("Depth (cm)")
+
+ax.set_ylim(0, 300)
+ax.set_xlim(0, 100)
+
+plt.show(block=False)
+
 
 def disparity_n_depth_map(
     left:    np.ndarray,
@@ -283,10 +303,44 @@ while True:
     # ── Depth map + estimation (only when tracking) ────────────────────────────
     depth = None
     if tracking:
-        _, depth_map = disparity_n_depth_map(mask_left, mask_right, colored=True)
-        depth = masked_percentile_depth(depth_map, mask_right, bbox_right)
+        disparity_vis, depth_map = disparity_n_depth_map(mask_left, mask_right, colored=True)
+        depth = masked_percentile_depth(depth_map, mask_right, bbox_right)*2.5
         depth = kf.update(depth)
         print(f"Depth: {depth:.2f} cm" if depth else "Depth: NaN")
+         # ── Update matplotlib plot ─────────────────────────
+        if depth is not None:
+
+            depth_history.append(depth)
+
+            x = np.arange(len(depth_history))
+
+            line.set_xdata(x)
+            line.set_ydata(depth_history)
+
+            ax.set_xlim(
+                0,
+                max(100, len(depth_history))
+            )
+
+            current_max = max(depth_history)
+
+            ax.set_ylim(
+                0,
+                max(300, current_max + 20)
+            )
+
+            # Update every 5 frames for better FPS
+            if frame_count % 5 == 0:
+
+                fig.canvas.draw()
+                fig.canvas.flush_events()
+
+    else:
+
+        disparity_vis = np.zeros(
+            (480, 640),
+            dtype=np.uint8
+        )
 
     # ── Annotate + display ─────────────────────────────────────────────────────
     annotate(frame_right, tracking, depth)
