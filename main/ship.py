@@ -1,6 +1,7 @@
-from time import time
+from time import time, sleep
 import cv2
 import numpy as np
+from picamera2 import Picamera2 
 
 # ── Stereo / depth constants ───────────────────────────────────────────────────
 BASELINE         = 17.7     # camera baseline [cm]
@@ -240,16 +241,28 @@ def annotate(frame: np.ndarray, tracking: bool, depth) -> None:
 # ── Main loop ──────────────────────────────────────────────────────────────────
 
 # cap = cv2.VideoCapture("assest/video.mp4")
-cap_left = cv2.VideoCapture(0)
-cap_right = cv2.VideoCapture(1)
+# cap_left = cv2.VideoCapture(0)
+# cap_right = cv2.VideoCapture(1)
+cap_left = Picamera2(0)
+cap_right = Picamera2(1)
+cap_left.configure(cap_left.create_preview_configuration(main={"size": (640,480)}))
+cap_right.configure(cap_right.create_preview_configuration(main={"size": (640,480)}))
+cap_left.start()
+cap_right.start()
+sleep(2)
 frame_count=0
 time_start=time()
 while True:
     frame_count+=1
-    ret1, frame_left = cap_left.read()
-    ret2, frame_right = cap_right.read()
-    if not ret1:
-        break
+    # ret1, frame_left = cap_left.read()
+    # ret2, frame_right = cap_right.read()
+    frame_left = cap_left.capture_array()
+    frame_right = cap_right.capture_array()
+
+    frame_left = cv2.cvtColor(frame_left, cv2.COLOR_RGB2BGR)
+    frame_right = cv2.cvtColor(frame_right, cv2.COLOR_RGB2BGR)
+    # if not ret1:
+    #     break
 
     h, w        = frame_left.shape[:2]
     half        = w // 2
@@ -286,6 +299,8 @@ while True:
         print(f"\n#| ====================\n#| FRAME DATA\n#|\n#| TOTAL FRAMES: {frame_count}\n#| TOTAL TIME: {time_diff}\n#| FPS: {frame_count/time_diff:.2f}\n#| ====================")
         break
 
-cap_left.release()
-cap_right.release()
+# cap_left.release()
+# cap_right.release()
+cap_left.stop()
+cap_right.stop()
 cv2.destroyAllWindows()
