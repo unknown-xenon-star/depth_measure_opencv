@@ -9,7 +9,7 @@ FOV_DEG          = 82       # horizontal FOV [degrees]
 FOCAL_LENGTH     = 220.0    # pixels — tune to your camera
 DISPARITY_OFFSET = 1.0      # avoids divide-by-zero at zero disparity
 DISP_SCALE       = 0.75      # resize factor fed into SGBM (0.5 = quarter pixels)
-HSV_MASK = [(104,41,109), (180,205,255)]
+HSV_MASK = [(40,49,2), (112,255,219)]
 
 # ── Detection constants ────────────────────────────────────────────────────────
 MIN_AREA = 50
