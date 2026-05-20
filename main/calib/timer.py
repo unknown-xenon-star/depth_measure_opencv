@@ -1,169 +1,67 @@
-import numpy as np
-import cv2 as cv
-from picamera2 import Picamera2
+import cv2
 import time
+import os
+from picamera2 import Picamera2
 
-# ==============================
-# CHESSBOARD SETTINGS
-# ==============================
+# --- Configuration ---
+INTERVAL = 3.0  # Time delay between captures in seconds
+OUTPUT_DIR = "captured_images"  # Folder where images will be saved
 
-# Inner corners
-chessboardSize = (11, 7)
+# Create output directory if it doesn't exist
+if not os.path.exists(OUTPUT_DIR):
+    os.makedirs(OUTPUT_DIR)
 
-# Square size in mm
-squareSizeMm = (25.5 / 9) * 10
+# Initialize Picamera2
+print("Initializing Pi Camera...")
+picam = Picamera2()
 
-# ==============================
-# TERMINATION CRITERIA
-# ==============================
+# Configure camera settings (Optional: Adjust resolution if needed)
+# The default configuration usually matches your sensor's profile.
+config = picam.create_preview_configuration()
+picam.configure(config)
 
-criteria = (
-    cv.TERM_CRITERIA_EPS + cv.TERM_CRITERIA_MAX_ITER,
-    30,
-    0.001
-)
+# Start the camera stream
+picam.start()
 
-# ==============================
-# PREPARE OBJECT POINTS
-# ==============================
+print(f"Starting image capture every {INTERVAL} seconds...")
+print("Press 'q' in the camera window to quit.")
 
-objp = np.zeros(
-    (chessboardSize[0] * chessboardSize[1], 3),
-    np.float32
-)
+# Initialize the tracking timer
+last_capture_time = time.time()
+img_counter = 0
 
-objp[:, :2] = np.mgrid[
-    0:chessboardSize[0],
-    0:chessboardSize[1]
-].T.reshape(-1, 2)
+try:
+    while True:
+        # Capture a frame as a NumPy array (directly compatible with OpenCV)
+        frame = picam.capture_array()
+        
+        # Picamera2 captures in RGB by default; OpenCV needs BGR for proper display/saving
+        frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-objp *= squareSizeMm
+        # Display the live video feed
+        cv2.imshow('RPi5 Camera Feed (Press Q to Quit)', frame_bgr)
 
-# ==============================
-# STORE POINTS
-# ==============================
+        # Check if 3 seconds have passed
+        current_time = time.time()
+        if current_time - last_capture_time >= INTERVAL:
+            # Generate a unique filename
+            img_name = os.path.join(OUTPUT_DIR, f"img_{img_counter:03d}.jpg")
+            
+            # Save the image
+            cv2.imwrite(img_name, frame_bgr)
+            print(f"Saved: {img_name}")
+            
+            # Update counter and reset the timer
+            img_counter += 1
+            last_capture_time = current_time
 
-objPoints = []
-imgPoints = []
+        # Listen for the 'q' key to quit
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            print("Stopping capture script...")
+            break
 
-# ==============================
-# INITIALIZE PI CAMERA 2
-# ==============================
-
-picam2 = Picamera2()
-
-config = picam2.create_preview_configuration(
-    main={"size": (1440, 1080)}
-)
-
-picam2.configure(config)
-picam2.start()
-
-time.sleep(2)
-
-print("Press SPACE to capture chessboard")
-print("Press Q to finish and calibrate")
-
-# ==============================
-# CAPTURE LOOP
-# ==============================
-
-while True:
-
-    # Capture frame
-    frame = picam2.capture_array()
-
-    # Convert RGB -> BGR for OpenCV
-    frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
-
-    # Convert to grayscale
-    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
-
-    # Find chessboard corners
-    ret, corners = cv.findChessboardCorners(
-        gray,
-        chessboardSize,
-        cv.CALIB_CB_ADAPTIVE_THRESH +
-        cv.CALIB_CB_FAST_CHECK +
-        cv.CALIB_CB_NORMALIZE_IMAGE
-    )
-
-    # Draw corners if found
-    display = frame.copy()
-
-    if ret:
-        cv.drawChessboardCorners(
-            display,
-            chessboardSize,
-            corners,
-            ret
-        )
-
-    cv.imshow("Calibration", display)
-
-    key = cv.waitKey(1)
-
-    # SPACE = save frame
-    if key == 32:
-
-        if ret:
-
-            objPoints.append(objp)
-
-            corners2 = cv.cornerSubPix(
-                gray,
-                corners,
-                (11, 11),
-                (-1, -1),
-                criteria
-            )
-
-            imgPoints.append(corners2)
-
-            print(f"Captured image {len(objPoints)}")
-
-        else:
-            print("Chessboard not detected")
-
-    # Q = quit
-    elif key == ord('q'):
-        break
-
-# ==============================
-# CLEANUP
-# ==============================
-
-cv.destroyAllWindows()
-picam2.stop()
-
-# ==============================
-# CAMERA CALIBRATION
-# ==============================
-
-if len(objPoints) > 0:
-
-    ret, cameraMatrix, dist, rvecs, tvecs = cv.calibrateCamera(
-        objPoints,
-        imgPoints,
-        gray.shape[::-1],
-        None,
-        None
-    )
-
-    print("\n==============================")
-    print("CAMERA MATRIX")
-    print("==============================")
-    print(cameraMatrix)
-
-    print("\n==============================")
-    print("DISTORTION COEFFICIENTS")
-    print("==============================")
-    print(dist)
-
-    print("\n==============================")
-    print("RMS REPROJECTION ERROR")
-    print("==============================")
-    print(ret)
-
-else:
-    print("No valid chessboard captures.")
+finally:
+    # Clean up and release camera resources cleanly
+    picam.stop()
+    cv2.destroyAllWindows()
+    print("Camera stopped. Done!")
