@@ -286,5 +286,6 @@ while True:
         print(f"\n#| ====================\n#| FRAME DATA\n#|\n#| TOTAL FRAMES: {frame_count}\n#| TOTAL TIME: {time_diff}\n#| FPS: {frame_count/time_diff:.2f}\n#| ====================")
         break
 
-cap.release()
+cap_left.release()
+cap_right.release()
 cv2.destroyAllWindows()
