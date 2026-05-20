@@ -254,7 +254,7 @@ while True:
 
     # ── Object detection ───────────────────────────────────────────────────────
     center_right, bbox_right = find_object(frame_right, mask_right)
-    center_left,  _          = find_object(frame_left,  mask_left)
+    center_left,  bbox_left  = find_object(frame_left,  mask_left)
 
     tracking = center_right is not None and center_left is not None
 
@@ -266,9 +266,12 @@ while True:
         gray_left  = cv2.cvtColor(frame_left,  cv2.COLOR_BGR2GRAY)
         gray_right = cv2.cvtColor(frame_right, cv2.COLOR_BGR2GRAY)
 
-        _, depth_map = disparity_n_depth_map(gray_left, gray_right, colored=False)
+        # Swapped: right fed as left and vice-versa to correct inverted disparity.
+        # In standard stereo, left camera must be the physical left camera.
+        # If your rig has them flipped, swap here instead of rewiring hardware.
+        _, depth_map = disparity_n_depth_map(gray_right, gray_left, colored=False)
 
-        depth = masked_percentile_depth(depth_map, mask_right, bbox_right)
+        depth = masked_percentile_depth(depth_map, mask_left, bbox_left)
         # FIX #5: pass real dt to Kalman filter
         depth = kf.update(depth, dt=dt)
         print(f"Depth: {depth:.2f} cm" if depth else "Depth: NaN")
