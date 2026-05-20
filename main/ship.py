@@ -304,7 +304,10 @@ while True:
     depth = None
     if tracking:
         disparity_vis, depth_map = disparity_n_depth_map(mask_left, mask_right, colored=True)
-        depth = masked_percentile_depth(depth_map, mask_right, bbox_right)*2.5
+        depth = masked_percentile_depth(depth_map, mask_right, bbox_right)
+        if depth is not None:
+            depth *=2.5
+        
         depth = kf.update(depth)
         print(f"Depth: {depth:.2f} cm" if depth else "Depth: NaN")
          # ── Update matplotlib plot ─────────────────────────
