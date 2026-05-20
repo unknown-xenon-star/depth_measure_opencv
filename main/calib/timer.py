@@ -1,19 +1,17 @@
 import numpy as np
 import cv2 as cv
-import glob
+from picamera2 import Picamera2
+import time
 
 # ==============================
 # CHESSBOARD SETTINGS
 # ==============================
 
-# CHANGED: Updated to match the actual inner corners of your board (11x7)
+# Inner corners
 chessboardSize = (11, 7)
 
-# CHANGED: Added your exact square size in millimeters (25.5 cm / 9 squares)
-squareSizeMm = 25.5 / 9 * 10  # Roughly 28.3333 mm
-
-# Image resolution
-frameSize = (1440, 1080)
+# Square size in mm
+squareSizeMm = (25.5 / 9) * 10
 
 # ==============================
 # TERMINATION CRITERIA
@@ -29,125 +27,143 @@ criteria = (
 # PREPARE OBJECT POINTS
 # ==============================
 
-# Create rows and columns filled with zeros based on new board size
 objp = np.zeros(
     (chessboardSize[0] * chessboardSize[1], 3),
     np.float32
 )
 
-# Fill x and y coordinates
 objp[:, :2] = np.mgrid[
     0:chessboardSize[0],
     0:chessboardSize[1]
 ].T.reshape(-1, 2)
 
-# CHANGED: Scale coordinates by the real-world square size
 objp *= squareSizeMm
 
 # ==============================
 # STORE POINTS
 # ==============================
 
-# 3D real-world points
 objPoints = []
-
-# 2D image points
 imgPoints = []
 
 # ==============================
-# LOAD IMAGES
+# INITIALIZE PI CAMERA 2
 # ==============================
 
-# CHANGED: Modified extension to match your '.jpg' files
-images = glob.glob('*.jpg')
+picam2 = Picamera2()
+
+config = picam2.create_preview_configuration(
+    main={"size": (1440, 1080)}
+)
+
+picam2.configure(config)
+picam2.start()
+
+time.sleep(2)
+
+print("Press SPACE to capture chessboard")
+print("Press Q to finish and calibrate")
 
 # ==============================
-# PROCESS EACH IMAGE
+# CAPTURE LOOP
 # ==============================
 
-for image in images:
+while True:
 
-    print("Processing:", image)
+    # Capture frame
+    frame = picam2.capture_array()
 
-    # Read image
-    img = cv.imread(image)
-    if img is None:
-        print(f"Warning: Could not read {image}")
-        continue
+    # Convert RGB -> BGR for OpenCV
+    frame = cv.cvtColor(frame, cv.COLOR_RGB2BGR)
 
     # Convert to grayscale
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
 
     # Find chessboard corners
     ret, corners = cv.findChessboardCorners(
         gray,
         chessboardSize,
-        None
+        cv.CALIB_CB_ADAPTIVE_THRESH +
+        cv.CALIB_CB_FAST_CHECK +
+        cv.CALIB_CB_NORMALIZE_IMAGE
     )
 
-    # If corners found
-    if ret == True:
+    # Draw corners if found
+    display = frame.copy()
 
-        # Save real-world points
-        objPoints.append(objp)
-
-        # Refine corner accuracy
-        corners2 = cv.cornerSubPix(
-            gray,
-            corners,
-            (11, 11),
-            (-1, -1),
-            criteria
-        )
-
-        # Save image points
-        imgPoints.append(corners2)
-
-        # Draw corners
+    if ret:
         cv.drawChessboardCorners(
-            img,
+            display,
             chessboardSize,
-            corners2,
+            corners,
             ret
         )
 
-        # Show image
-        cv.imshow('img', img)
-        cv.waitKey(500)
-    else:
-        print(f"Failed to find corners in {image}")
+    cv.imshow("Calibration", display)
 
-# Close all windows
+    key = cv.waitKey(1)
+
+    # SPACE = save frame
+    if key == 32:
+
+        if ret:
+
+            objPoints.append(objp)
+
+            corners2 = cv.cornerSubPix(
+                gray,
+                corners,
+                (11, 11),
+                (-1, -1),
+                criteria
+            )
+
+            imgPoints.append(corners2)
+
+            print(f"Captured image {len(objPoints)}")
+
+        else:
+            print("Chessboard not detected")
+
+    # Q = quit
+    elif key == ord('q'):
+        break
+
+# ==============================
+# CLEANUP
+# ==============================
+
 cv.destroyAllWindows()
+picam2.stop()
 
-# Ensure we actually found corners before running calibration
+# ==============================
+# CAMERA CALIBRATION
+# ==============================
+
 if len(objPoints) > 0:
-    # ==============================
-    # CAMERA CALIBRATION
-    # ==============================
 
     ret, cameraMatrix, dist, rvecs, tvecs = cv.calibrateCamera(
         objPoints,
         imgPoints,
-        gray.shape[::-1], # Best practice: Uses actual image dimension dynamically
+        gray.shape[::-1],
         None,
         None
     )
 
-    # ==============================
-    # PRINT RESULTS
-    # ==============================
-
-    print("\nCAMERA MATRIX:")
+    print("\n==============================")
+    print("CAMERA MATRIX")
+    print("==============================")
     print(cameraMatrix)
 
-    print("\nDISTORTION COEFFICIENTS:")
+    print("\n==============================")
+    print("DISTORTION COEFFICIENTS")
+    print("==============================")
     print(dist)
 
-    print("\nROTATION VECTORS:")
-    print(rvecs)
+    print("\n==============================")
+    print("RMS REPROJECTION ERROR")
+    print("==============================")
+    print(ret)
 
-    print("\nTRANSLATION VECTORS (in mm):")
-    print(tvecs)
 else:
-    print("Error: No chessboard corners were detected in any images.")
+    print("No valid chessboard captures.")
