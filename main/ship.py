@@ -348,6 +348,7 @@ while True:
 
     cv2.imshow("RIGHT CAMERA", frame_right)
     cv2.imshow("LEFT CAMERA",  frame_left)
+    cv2.imshow("Masked Image",  mask_right)
 
     if cv2.pollKey() & 0xFF == ord('q'):   # non-blocking — saves ~1 ms/frame
         time_diff = time()-time_start
