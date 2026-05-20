@@ -150,7 +150,7 @@ ax.set_title("Live Depth Plot")
 ax.set_xlabel("Frame")
 ax.set_ylabel("Depth (cm)")
 
-ax.set_ylim(0, 300)
+ax.set_ylim(0, 100)
 ax.set_xlim(0, 100)
 
 plt.show(block=False)
@@ -326,7 +326,7 @@ while True:
 
             ax.set_ylim(
                 0,
-                max(300, current_max + 20)
+                max(100, current_max + 20)
             )
 
             # Update every 5 frames for better FPS
