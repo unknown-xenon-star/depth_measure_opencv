@@ -4,11 +4,11 @@ import numpy as np
 from picamera2 import Picamera2 
 
 # ── Stereo / depth constants ───────────────────────────────────────────────────
-BASELINE         = 17.7     # camera baseline [cm]
-FOV_DEG          = 70       # horizontal FOV [degrees]
-FOCAL_LENGTH     = 180.0    # pixels — tune to your camera
+BASELINE         = 10    # camera baseline [cm]
+FOV_DEG          = 82       # horizontal FOV [degrees]
+FOCAL_LENGTH     = 220.0    # pixels — tune to your camera
 DISPARITY_OFFSET = 1.0      # avoids divide-by-zero at zero disparity
-DISP_SCALE       = 0.8      # resize factor fed into SGBM (0.5 = quarter pixels)
+DISP_SCALE       = 0.75      # resize factor fed into SGBM (0.5 = quarter pixels)
 HSV_MASK = [(104,41,109), (180,205,255)]
 
 # ── Detection constants ────────────────────────────────────────────────────────
