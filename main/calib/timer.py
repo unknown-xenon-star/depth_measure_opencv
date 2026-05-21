@@ -1,7 +1,6 @@
 import cv2
 import time
 import os
-from picamera2 import Picamera2
 
 # --- Configuration ---
 INTERVAL = 3.0  # Time delay between captures in seconds
