@@ -13,7 +13,7 @@ K_LEFT = np.array([
     [734.78419479, 0.0, 335.558714],
     [0.0, 734.67820344, 234.05811661],
     [0.0, 0.0, 1.0]
-], dtype=np.float32)
+], dtype=np.float64)
 
 DIST_LEFT = np.array([
     [-4.70065931e-01,
@@ -21,7 +21,7 @@ DIST_LEFT = np.array([
       1.45712481e-04,
      -2.64300524e-03,
      -5.80831061e-01]
-], dtype=np.float32)
+], dtype=np.float64)
 
 # SAME CAMERA MODEL
 K_RIGHT = K_LEFT.copy()
@@ -37,13 +37,13 @@ R = np.array([
     [0.9998, 0.0010, -0.0170],
     [-0.0011, 1.0000, -0.0020],
     [0.0170, 0.0020, 0.9998]
-], dtype=np.float32)
+], dtype=np.float64)
 
 T = np.array([
     [-6.5],
     [0.0],
     [0.0]
-], dtype=np.float32)
+], dtype=np.float64)
 
 # =============================================================================
 # IMAGE SIZE
@@ -485,7 +485,7 @@ while True:
             bbox_right
         )
 
-        depth = kf.update(depth)
+        # depth = kf.update(depth)
 
         if depth is not None:
 
