@@ -20,8 +20,20 @@ right_cam = Picamera2(camera_num=1)
 
 # Configure camera settings (Optional: Adjust resolution if needed)
 # The default configuration usually matches your sensor's profile.
-left_config = left_cam.create_preview_configuration()
-right_config = right_cam.create_preview_configuration()
+# Set higher resolution
+RESOLUTION = (2592, 1944)   # Example: 5MP
+# Other common options:
+# (1920, 1080)
+# (3280, 2464)  # Full 8MP for IMX219
+# (4056, 3040)  # HQ camera
+
+left_config = left_cam.create_preview_configuration(
+    main={"size": RESOLUTION}
+)
+
+right_config = right_cam.create_preview_configuration(
+    main={"size": RESOLUTION}
+)
 left_cam.configure(left_config)
 right_cam.configure(right_config)
 
