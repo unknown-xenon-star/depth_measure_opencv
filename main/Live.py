@@ -6,6 +6,7 @@ import numpy as np
 from tools.disparity_map import disparity_n_depth_map
 from tools.hsv import add_HSV_filter
 from tools.detection import find_object, find_depth
+from tools.extras import masked_percentile_depth
 
 from tools.config import (
     MODE,
@@ -84,24 +85,7 @@ while True:
 
         # Compute depth
         depth = find_depth( circles_right, circles_left, frame_right, frame_left, BASELINE, ALPHA)
-        # depth_ = depth_map 
-        roi = depth_map[
-            corr_r[0][1]:corr_r[1][1],
-            corr_r[0][0]:corr_r[1][0]
-        ]
-
-        roi_mask = mask_right[
-            corr_r[0][1]:corr_r[1][1],
-            corr_r[0][0]:corr_r[1][0]
-        ]
-
-        values = roi[roi_mask > 0]
-        values = values[np.isfinite(values)]
-        values = values[values > 0]
-        if values.size > 0:
-            depth = np.percentile(values, 50)
-        else:
-            depth = None
+        depth = masked_percentile_depth(depth_map, mask_right, corr_r, 50)
         # Show tracking
         cv2.putText( frame_right, "TRACKING", (75,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (124,252,0), 2)
         cv2.putText( frame_left, "TRACKING", (75,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (124,252,0), 2 )
