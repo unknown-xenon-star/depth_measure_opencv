@@ -43,8 +43,8 @@ try:
         right_frame = right_cam.capture_array()
 
         # Picamera2 captures in RGB by default; OpenCV needs BGR for proper display/saving
-        left_frame = cv2.flip(left_frame, 1)
-        right_frame = cv2.flip(right_frame, 1)
+        left_frame = cv2.flip(left_frame, 0)
+        right_frame = cv2.flip(right_frame, 0)
         left_frame_bgr = cv2.cvtColor(left_frame, cv2.COLOR_RGB2BGR)
         right_frame_bgr = cv2.cvtColor(right_frame, cv2.COLOR_RGB2BGR)
 
