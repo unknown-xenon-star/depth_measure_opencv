@@ -1,7 +1,8 @@
 import numpy as np
 import cv2
 from time import time
-
+from tools.hsv import add_HSV_filter
+from config import MASK_HSV
 
 # =======================================
 # CONFIG
@@ -94,26 +95,6 @@ def find_object(frame, mask):
 
     return center, [[x, y], [x+w, y+h]]
 
-def add_HSV_filter(frame):
-
-    # Blur image to reduce noise
-    blur = cv2.GaussianBlur(frame, (7,7), 0)
-
-    # Convert BGR -> HSV
-    hsv = cv2.cvtColor(blur, cv2.COLOR_BGR2HSV)
-
-    # HSV ranges
-    # Change according to your object color
-    mask = cv2.inRange( hsv, (0, 80, 50), (179, 255, 255) )
-    
-    # kernel = np.ones((5,5), np.uint8)
-
-    # Morphological operations
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, MORPH_K, iterations=1)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, MORPH_K, iterations=2)
-
-    return mask
-
 def main():
 
     # Open left and right cameras
@@ -135,8 +116,8 @@ def main():
         # =====================================================
         # HSV FILTERING
         # =====================================================
-        mask_right = add_HSV_filter(frame_right)
-        mask_left = add_HSV_filter(frame_left)
+        mask_left  = add_HSV_filter(frame_left, 7, MASK_HSV)
+        mask_right  = add_HSV_filter(frame_right, 7, MASK_HSV)
 
         # Apply masks
         # res_right = cv2.bitwise_and( frame_right, frame_right, mask=mask_right )

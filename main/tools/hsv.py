@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import imutils
+# import imutils
 import math
 from config import BASELINE, ALPHA, MASK_HSV
 
@@ -11,7 +11,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from tools.detection import find_circles, find_depth, find_object
 
-def add_HSV_filter(frame: np.ndarray, blur_factor, mask) -> np.ndarray:
+def add_HSV_filter(frame: np.ndarray, blur_factor: int = 7, mask: np.ndarray | None = None) -> np.ndarray:
     """Binary mask isolating the target object via HSV thresholding."""
 
     # Blur image to reduce noise

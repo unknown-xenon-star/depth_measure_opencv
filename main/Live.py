@@ -4,6 +4,7 @@ import numpy as np
 # import imutils
 # import math
 from tools.disparity_map import disparity_n_depth_map
+# from PSMNet_dis import disparity_n_depth_map_psmnet as disparity_n_depth_map
 from tools.hsv import add_HSV_filter
 from tools.detection import find_object, find_depth
 from tools.extras import masked_percentile_depth
@@ -20,6 +21,7 @@ from tools.config import (
     LEFT_IMAGE,
     RIGHT_IMAGE 
 )
+MASK_HSV = [(99,52,69), (161,199,255)]
 
 
 
@@ -67,7 +69,7 @@ while True:
     circles_right, corr_r = find_object(frame_right, mask_right)
     circles_left, corr_y = find_object(frame_left, mask_left)
     
-    disparity_map, depth_map = disparity_n_depth_map(mask_left, mask_right, True)
+    disparity_map, depth_map = disparity_n_depth_map(frame_left, frame_right, True)
 
     # print(depth_map.shape)
     

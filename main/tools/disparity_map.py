@@ -31,8 +31,9 @@ stereo = cv2.StereoSGBM_create(
 def disparity_n_depth_map(
     left:    np.ndarray,
     right:   np.ndarray,
-    Colored: bool = False,
+    colored: bool = False,
     scale:   float = 0.8,
+    gray: bool = False
 
 ):
     """
@@ -45,6 +46,9 @@ def disparity_n_depth_map(
     """
     h, w = left.shape[:2]
 
+    if gray:
+        left = cv2.cvtColor(left, cv2.COLOR_BGR2GRAY)
+        right = cv2.cvtColor(right, cv2.COLOR_BGR2GRAY)
     if scale != 1.0:
         dsize  = (int(w * scale), int(h * scale))
         left = cv2.resize(left, dsize, interpolation=cv2.INTER_LINEAR)
@@ -73,7 +77,7 @@ def disparity_n_depth_map(
         cv2.NORM_MINMAX
     ).astype(np.uint8)
 
-    if Colored:
+    if colored:
         # Apply color map
         disparity_display = cv2.applyColorMap(
             disparity_display,

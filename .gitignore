@@ -7,7 +7,10 @@ __pycache__/
 *.mp4
 */*.pt
 *.pt
-
+*/PSMNet/
+PSMNet/*
+PSMNet/
+*/PSMNet/*
 
 .venv/
 venv/
