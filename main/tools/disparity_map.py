@@ -86,3 +86,39 @@ def disparity_n_depth_map(
 
 
     return disparity_display, depth
+
+def automatic_grabcut(
+    img,
+    mask
+):
+
+    # Convert mask to grabcut format
+    gc_mask = np.where(
+        mask > 0,
+        cv2.GC_PR_FGD,
+        cv2.GC_BGD
+    ).astype("uint8")
+
+    bgdModel = np.zeros((1, 65), np.float64)
+    fgdModel = np.zeros((1, 65), np.float64)
+
+    # GrabCut refinement
+    cv2.grabCut(
+        img,
+        gc_mask,
+        None,
+        bgdModel,
+        fgdModel,
+        5,
+        cv2.GC_INIT_WITH_MASK
+    )
+
+    # Final binary mask
+    final_mask = np.where(
+        (gc_mask == cv2.GC_FGD) |
+        (gc_mask == cv2.GC_PR_FGD),
+        255,
+        0
+    ).astype(np.uint8)
+
+    return final_mask

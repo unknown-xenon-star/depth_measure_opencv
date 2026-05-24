@@ -1,13 +1,15 @@
 from time import time
 import cv2
 import numpy as np
+# import matplotlib.pyplot as plt
 # import imutils
 # import math
-from tools.disparity_map import disparity_n_depth_map
+from tools.disparity_map import disparity_n_depth_map, automatic_grabcut
 # from PSMNet_dis import disparity_n_depth_map_psmnet as disparity_n_depth_map
 from tools.hsv import add_HSV_filter
 from tools.detection import find_object, find_depth
 from tools.extras import masked_percentile_depth
+# from tools.segmentation import segment, kmeans_mask, kmeans_segmentation, kmeans_segmentation_batch
 
 from tools.config import (
     MODE,
@@ -33,6 +35,7 @@ MASK_HSV = [(99,52,69), (161,199,255)]
 cap = cv2.VideoCapture("assest/video.mp4")
 frame_count=0
 time_start=time()
+
 while True:
     frame_count+=1
     ret, frame = cap.read()
@@ -57,6 +60,9 @@ while True:
 
     mask_right = add_HSV_filter(frame_right, 7, MASK_HSV)
     mask_left = add_HSV_filter(frame_left, 7,MASK_HSV)
+    
+    # ano_mask2 = kmeans_segmentation_batch(frame_right)
+    # annoted_frame, ano_mask2 = segment(frame_right)
 
     # Apply masks
     # res_right = cv2.bitwise_and( frame_right, frame_right, mask=mask_right )
@@ -70,6 +76,7 @@ while True:
     circles_left, corr_y = find_object(frame_left, mask_left)
     
     disparity_map, depth_map = disparity_n_depth_map(frame_left, frame_right, True)
+
 
     # print(depth_map.shape)
     
@@ -87,6 +94,7 @@ while True:
 
         # Compute depth
         depth = find_depth( circles_right, circles_left, frame_right, frame_left, BASELINE, ALPHA)
+        mask_right = automatic_grabcut(frame_right, mask_right)
         depth = masked_percentile_depth(depth_map, mask_right, corr_r, 50)
         # Show tracking
         cv2.putText( frame_right, "TRACKING", (75,50), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (124,252,0), 2)
@@ -105,10 +113,14 @@ while True:
     cv2.imshow("RIGHT CAMERA", frame_right)
     # cv2.imshow("LEFT CAMERA", frame_left)
 
-    # cv2.imshow("MASK RIGHT", mask_right)
+    cv2.imshow("MASK RIGHT", mask_right)
     # cv2.imshow("MASK LEFT", mask_left)
 
     # cv2.imshow("DEPTH MAP",depth_map)
+
+    # cv2.imshow("mask", ano_mask)
+    # cv2.imshow("ano_mask2", ano_mask2)
+    # cv2.imshow("annoted_frame", annoted_frame)
 
     # Exit key
     if cv2.waitKey(1) & 0xFF == ord('q'):

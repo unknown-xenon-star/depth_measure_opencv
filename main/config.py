@@ -19,7 +19,7 @@ LEFT_IMAGE = "assest/im0.png"
 RIGHT_IMAGE = "assest/im1.png"
 
 MASK_HSV = [
-    (173,114,153), (180,255,219)
+    (85,32,33), (180,216,218)
 ]
 
 

@@ -3,6 +3,13 @@ import math
 import cv2
 import numpy as np
 
+try:
+    from config import ALPHA, FOCAL_LENGTH, BASELINE
+except ImportError:
+    ALPHA = 70.0
+    FOCAL_LENGTH = 600.0
+    BASELINE = 10.0
+
 
 def find_red_center(frame):
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -50,23 +57,41 @@ def calculate_radial_angle(origin, target):
     return angle
 
 
+def calculate_horizontal_vertical_angles(origin, target, f_pixel):
+    # Horizontal offset (positive = right, negative = left)
+    delta_x = target[0] - origin[0]
+    # Vertical offset (positive = up/above, negative = down/below)
+    delta_y = origin[1] - target[1]
+
+    h_angle = math.degrees(math.atan2(delta_x, f_pixel))
+    v_angle = math.degrees(math.atan2(delta_y, f_pixel))
+    return h_angle, v_angle
+
+
 cap = cv2.VideoCapture(0)
 
 while True:
     is_true, frame = cap.read()
-
+    frame = cv2.flip(frame, 1)
     if not is_true:
         break
 
     frame_height, frame_width = frame.shape[:2]
     frame_center = (frame_width // 2, frame_height // 2)
 
+    # Calculate camera focal length in pixels using horizontal FOV (ALPHA)
+    f_pixel = (frame_width * 0.5) / math.tan(math.radians(ALPHA * 0.5))
+
+    # Draw vertical and horizontal central lines (axes)
+    cv2.line(frame, (frame_center[0], 0), (frame_center[0], frame_height), (100, 100, 100), 1, cv2.LINE_AA)
+    cv2.line(frame, (0, frame_center[1]), (frame_width, frame_center[1]), (100, 100, 100), 1, cv2.LINE_AA)
+
     red_mask, red_center, red_contour = find_red_center(frame)
 
     cv2.circle(frame, frame_center, 5, (255, 255, 0), -1)
     cv2.putText(
         frame,
-        "Frame center",
+        "Center",
         (frame_center[0] + 10, frame_center[1] - 10),
         cv2.FONT_HERSHEY_SIMPLEX,
         0.5,
@@ -79,25 +104,111 @@ while True:
         cv2.drawContours(frame, [red_contour], -1, (0, 255, 0), 2)
         cv2.circle(frame, red_center, 6, (0, 0, 255), -1)
 
-        angle = calculate_radial_angle(frame_center, red_center)
+        # Calculate horizontal and vertical angles with sign
+        h_angle, v_angle = calculate_horizontal_vertical_angles(frame_center, red_center, f_pixel)
+        radial_angle = calculate_radial_angle(frame_center, red_center)
 
+        # Draw a line from frame center to target
         cv2.line(frame, frame_center, red_center, (255, 0, 0), 2)
+
+        # Draw alignment projection lines from target center to the central lines
+        cv2.line(frame, red_center, (frame_center[0], red_center[1]), (255, 150, 0), 1, cv2.LINE_AA)
+        cv2.line(frame, red_center, (red_center[0], frame_center[1]), (255, 150, 0), 1, cv2.LINE_AA)
+
+        # Assuming static distance between camera and object center is 74 cm (Euclidean Distance D = 74)
+        D_static = 74.0
+        u_ratio = math.tan(math.radians(h_angle))
+        v_ratio = math.tan(math.radians(v_angle))
+        
+        # Z = D / sqrt(tan^2(h) + tan^2(v) + 1)
+        depth = D_static / math.sqrt(u_ratio**2 + v_ratio**2 + 1)
+        h_dist = u_ratio * depth
+        v_dist = v_ratio * depth
+
         cv2.putText(
             frame,
             f"Red center: {red_center}",
             (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
+            0.6,
             (0, 255, 0),
             2,
             cv2.LINE_AA,
         )
         cv2.putText(
             frame,
-            f"Angle: {angle:.2f} deg",
+            f"H-Angle: {h_angle:+.2f} deg",
             (10, 60),
             cv2.FONT_HERSHEY_SIMPLEX,
-            0.7,
+            0.6,
+            (0, 255, 0),
+            2,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            frame,
+            f"V-Angle: {v_angle:+.2f} deg",
+            (10, 90),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 255, 0),
+            2,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            frame,
+            f"Radial Angle: {radial_angle:.2f} deg",
+            (10, 120),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 255, 0),
+            2,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            frame,
+            f"H-Dist: {h_dist:+.2f} cm",
+            (10, 150),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            frame,
+            f"V-Dist: {v_dist:+.2f} cm",
+            (10, 180),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            frame,
+            f"Depth (Z): {depth:.2f} cm",
+            (10, 210),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (0, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
+
+        # Baseline distance calculation with zero division check
+        if abs(h_angle) > 1e-5:
+            calculated_distance = BASELINE / (2 * math.tan(math.radians(abs(h_angle))))
+            distance_text = f"DISTANCE (Base): {calculated_distance:.2f} cm"
+        else:
+            distance_text = "DISTANCE (Base): N/A"
+
+        cv2.putText(
+            frame,
+            distance_text,
+            (10, 240),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
             (0, 255, 0),
             2,
             cv2.LINE_AA,
@@ -122,4 +233,5 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
+
 
