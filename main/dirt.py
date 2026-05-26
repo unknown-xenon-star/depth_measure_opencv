@@ -66,7 +66,7 @@ CAM_ABOVE_SENSOR_CM   =  7.0
 # ── Stereo depth constants ────────────────────────────────────────────────────
 STEREO_BASELINE    = 6.5   # cm  — physical lens-to-lens distance, tune to rig
 STEREO_DEPTH_SCALE = 2.5   # empirical correction factor, tune on bench
-HYBRID_INTERVAL    = 3     # 0=HSV only  1=hybrid every frame  N=hybrid every N frames
+HYBRID_INTERVAL    = 1     # 0=HSV only  1=hybrid every frame  N=hybrid every N frames
 
 # HSV hint range — matches the orange/red target that find_red_center tracks
 MASK_HSV = [(15, 80, 40), (40, 255, 255)]
