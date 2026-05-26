@@ -189,8 +189,8 @@ def opencv_thread():
         with shared["lock"]:
             if not shared["running"]:
                 break
-
-        fframe_left=left_cam.capture_array()
+        
+        frame_left=left_cam.capture_array()
         frame_right=right_cam.capture_array()
 
         frame_left=cv2.cvtColor(
