@@ -23,8 +23,6 @@ import time
 
 import cv2
 import numpy as np
-import serial
-from picamera2 import Picamera2
 
 # ── Stereo / hybrid segmentation pipeline ────────────────────────────────────
 from tools.kalman_filter       import KalmanDepthTracker
@@ -33,6 +31,8 @@ from tools.hsv                 import add_HSV_filter
 from tools.extras              import masked_percentile_depth
 from tools.detection           import find_object
 from tools.hybrid_segmentation import hybrid_mask
+import serial
+from picamera2 import Picamera2
 
 # ── Config ────────────────────────────────────────────────────────────────────
 try:
