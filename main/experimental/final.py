@@ -39,6 +39,7 @@ TILT_HOME    = 90
 PAN_HOME     = 90
 
 YAW_OFFSET_DEG = -45.0
+YAW_ZERO_OFFSET = 0.0
 
 # ── Sensor-Camera Spatial Offset ────────────────────────────────────────────
 CAM_BEHIND_SENSOR_CM  = 10.0   
@@ -234,10 +235,31 @@ def opencv_thread():
             manual_tilt_offset = 0
             print("Manual Servo offsets reset to home center.")
 
-        frame = cv2.flip(frame, 1)
-        h, w  = frame.shape[:2]
-        center = (w // 2, h // 2)
-        f_px   = (w * 0.5) / math.tan(math.radians(ALPHA * 0.5))
+        elif key == ord("f"):          # Set current yaw as new zero
+            global yaw_zero_offset
+
+            with shared["lock"]:
+                q0, q1, q2, q3 = shared["quat"]
+
+            offset_rad = math.radians(YAW_OFFSET_DEG)
+            qo_w = math.cos(offset_rad / 2.0)
+            qo_z = math.sin(offset_rad / 2.0)
+
+            w_c = q0 * qo_w - q3 * qo_z
+            x_c = q1 * qo_w + q2 * qo_z
+            y_c = q2 * qo_w - q1 * qo_z
+            z_c = q3 * qo_w + q0 * qo_z
+
+            raw_yaw = math.atan2(
+                2 * (w_c * z_c + x_c * y_c),
+                1 - 2 * (y_c * y_c + z_c * z_c)
+            )
+
+            yaw = raw_yaw - yaw_zero_offset
+
+            yaw_zero_offset = yaw
+
+            print("Yaw calibrated -> current heading is now 0°")
 
         # Cross-hair
         cv2.line(frame, (center[0], 0),  (center[0], h), (100, 100, 100), 1)
