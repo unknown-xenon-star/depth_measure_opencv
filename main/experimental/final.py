@@ -194,6 +194,8 @@ def opencv_thread():
         frame_right=right_cam.capture_array()
         cv2.flip(frame_left, 0, dst=frame_left)
         cv2.flip(frame_right, 0, dst=frame_right)
+        cv2.flip(frame_left, 1, dst=frame_left)
+        cv2.flip(frame_right, 1, dst=frame_right)
         frame_left=cv2.cvtColor(
             frame_left,
             cv2.COLOR_RGB2BGR
