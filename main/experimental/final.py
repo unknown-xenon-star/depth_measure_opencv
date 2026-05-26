@@ -15,7 +15,7 @@ import time
 import cv2
 import numpy as np
 import serial
-
+from picamera2 import Picamera2
 # ── Config ──────────────────────────────────────────────────────────────────
 try:
     from config import ALPHA, FOCAL_LENGTH, BASELINE
@@ -158,7 +158,25 @@ def calculate_radial_angle(origin, target):
 # ═══════════════════════════════════════════════════════════════════════════
 def opencv_thread():
     global CAM_ABOVE_SENSOR_CM, CAM_BEHIND_SENSOR_CM
-    cap       = cv2.VideoCapture(1)
+    left_cam=Picamera2(0)
+    right_cam=Picamera2(1)
+
+    left_cam.configure(
+    left_cam.create_preview_configuration(
+        main={"size":(640,480)}
+    )
+    )
+
+    right_cam.configure(
+    right_cam.create_preview_configuration(
+        main={"size":(640,480)}
+    )
+    )
+
+    left_cam.start()
+    right_cam.start()
+
+    time.sleep(2)
     bt_serial = open_bluetooth_serial()
 
     last_sent_angles  = None
@@ -172,9 +190,23 @@ def opencv_thread():
             if not shared["running"]:
                 break
 
-        ok, frame = cap.read()
-        if not ok:
-            break
+        fframe_left=left_cam.capture_array()
+        frame_right=right_cam.capture_array()
+
+        frame_left=cv2.cvtColor(
+            frame_left,
+            cv2.COLOR_RGB2BGR
+        )
+
+        frame_right=cv2.cvtColor(
+            frame_right,
+            cv2.COLOR_RGB2BGR
+        )
+
+        frame=frame_right.copy()
+        
+        # if not ok:
+        #     break
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):
@@ -263,7 +295,8 @@ def opencv_thread():
                 shared["running"] = False
             break
 
-    cap.release()
+    left_cam.stop()
+    right_cam.stop()
     if bt_serial:
         bt_serial.close()
     cv2.destroyAllWindows()
