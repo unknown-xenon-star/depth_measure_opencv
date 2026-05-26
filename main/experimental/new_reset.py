@@ -334,6 +334,9 @@ def main():
     arrow(length=2, shaftwidth=.1, color=color.red,   axis=vector(1, 0, 0))
     arrow(length=2, shaftwidth=.1, color=color.green, axis=vector(0, 1, 0))
     arrow(length=4, shaftwidth=.1, color=color.blue,  axis=vector(0, 0, 1))
+    label(pos=vector(2.25, 0, 0), text="X", color=color.red,   height=16, box=False)
+    label(pos=vector(0, 2.25, 0), text="Y", color=color.green, height=16, box=False)
+    label(pos=vector(0, 0, 4.25), text="Z", color=color.blue,  height=16, box=False)
 
     # Unit vectors for tracking assembly orientation
     front_arrow = arrow(length=1.0, shaftwidth=.1, color=color.purple,  axis=vector(1, 0, 0))
